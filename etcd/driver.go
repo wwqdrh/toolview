@@ -12,15 +12,23 @@ import (
 
 type EtcdOptions struct {
 	Endpoints   []string
-	DialTimeout time.Duration
+	DialTimeout time.Duration // 连接超时时间
+	OpTimeout   time.Duration // 操作超时时间
 	UserName    string
 	Password    string
 }
 
 type EtcdDriver struct {
-	client *clientv3.Client
+	client    *clientv3.Client
+	OpTimeout time.Duration
 }
 
+type EtcdRecord struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// only check conf syntax
 func NewEtcdDriver(options *EtcdOptions) (*EtcdDriver, error) {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   options.Endpoints,   // []string{"localhost:2379"},
@@ -33,8 +41,14 @@ func NewEtcdDriver(options *EtcdOptions) (*EtcdDriver, error) {
 		return nil, err
 	}
 	return &EtcdDriver{
-		client: cli,
+		client:    cli,
+		OpTimeout: options.OpTimeout,
 	}, nil
+}
+
+// 测试是否连通
+func (d *EtcdDriver) Ping() bool {
+	return d.Put("/test/ping", "1") == nil
 }
 
 func (d *EtcdDriver) Close() error {
@@ -58,7 +72,7 @@ func (d *EtcdDriver) HandleError(err error) error {
 }
 
 func (d *EtcdDriver) Put(key, value string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), d.OpTimeout)
 	defer cancel()
 	_, err := d.client.Put(ctx, key, value)
 	return d.HandleError(err)
@@ -87,7 +101,7 @@ func (d *EtcdDriver) KeepAlive(id clientv3.LeaseID) (int64, error) {
 }
 
 func (d *EtcdDriver) Get(key string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), d.OpTimeout)
 	defer cancel()
 	resp, err := d.client.Get(ctx, key)
 	if err := d.HandleError(err); err != nil {
@@ -99,6 +113,19 @@ func (d *EtcdDriver) Get(key string) (string, error) {
 		}
 	}
 	return "", errors.New("未找到元素")
+}
+
+func (d *EtcdDriver) List(prefix string) (ans []*EtcdRecord, e error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.OpTimeout)
+	defer cancel()
+	resp, err := d.client.Get(ctx, prefix, clientv3.WithPrefix())
+	if err := d.HandleError(err); err != nil {
+		return nil, err
+	}
+	for _, ev := range resp.Kvs {
+		ans = append(ans, &EtcdRecord{string(ev.Key), string(ev.Value)})
+	}
+	return
 }
 
 func (d *EtcdDriver) Watch(ctx context.Context, key string) error {

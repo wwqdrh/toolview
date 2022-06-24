@@ -1,9 +1,18 @@
 package etcd
 
+import (
+	"errors"
+	"time"
+)
+
 // 饿汉单例 全局只维护这一个配置
 var currConf = &etcdConf{
-	Endpoints: []string{"localhost:2379"},
+	Endpoints: []string{"127.0.0.1:2379"},
+	UserName:  "root",
+	Password:  "123456",
 }
+
+var currDriver *EtcdDriver
 
 type etcdConf struct {
 	Endpoints []string `json:"endpoints"`
@@ -23,4 +32,26 @@ func (c *etcdConf) Update(conf *etcdConf) error {
 	}
 
 	return nil
+}
+
+func (c *etcdConf) VerifyDriver() (*EtcdDriver, error) {
+	if currDriver != nil {
+		return currDriver, nil
+	}
+
+	driver, err := NewEtcdDriver(&EtcdOptions{
+		Endpoints:   currConf.Endpoints,
+		DialTimeout: 3 * time.Second,
+		OpTimeout:   3 * time.Second,
+		UserName:    currConf.UserName,
+		Password:    currConf.Password,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if driver.Ping() {
+		currDriver = driver
+		return currDriver, nil
+	}
+	return nil, errors.New("连接失败")
 }

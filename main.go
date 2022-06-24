@@ -18,13 +18,32 @@ import (
 
 var port = flag.Int("port", 8080, "端口")
 
-func main() {
-	engine := gin.Default()
-	etcd.RegisterAPI(engine)
+var Engine *gin.Engine
 
+var API = []struct {
+	method  string
+	url     string
+	handler []gin.HandlerFunc
+}{
+	{"GET", "/etcd/conf/verify", []gin.HandlerFunc{etcd.ConfVerify}},
+	{"GET", "/etcd/conf/status", []gin.HandlerFunc{etcd.ConfStatus}},
+	{"POST", "/etcd/conf/update", []gin.HandlerFunc{etcd.ConfUpdate}},
+	{"GET", "/etcd/key/list", []gin.HandlerFunc{etcd.KeyList}},
+	{"POST", "/etcd/key/put", []gin.HandlerFunc{etcd.KeyPut}},
+	{"POST", "/etcd/key/delete", []gin.HandlerFunc{etcd.KeyDelete}},
+}
+
+func init() {
+	Engine = gin.Default()
+	for _, item := range API {
+		Engine.Handle(item.method, item.url, item.handler...)
+	}
+}
+
+func main() {
 	srv := http.Server{
 		Addr:    fmt.Sprintf(":%d", *port),
-		Handler: engine,
+		Handler: Engine,
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {

@@ -77,7 +77,29 @@ func KeyList(ctx *gin.Context) {
 	}
 }
 
+type keyPutReq struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 func KeyPut(ctx *gin.Context) {
+	var req keyPutReq
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	if _, err := currConf.VerifyDriver(); err != nil {
+		ctx.String(http.StatusOK, "etcd-conf未配置成功")
+		return
+	}
+
+	err := currDriver.Put(req.Key, req.Value)
+	if err != nil {
+		logger.DefaultLogger.Error(err.Error())
+		ctx.String(http.StatusInternalServerError, err.Error())
+	} else {
+		ctx.String(http.StatusOK, "ok")
+	}
 
 }
 

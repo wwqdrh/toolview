@@ -1,28 +1,87 @@
-name: Release ToolView
-
-on:
-  release:
-    types: [created]
-
+on: push
+name: Build Release
 jobs:
-  releases-matrix:
-    name: Release Go Binary
+  release-linux-386:
+    name: release linux/386
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # build and publish in parallel: linux/amd64
-        goos: [linux]
-        goarch: [amd64]
     steps:
-      - uses: actions/checkout@v2
-      - name: Run tests
-        run: go test -v -p=1 -timeout=0 ./...
-      - uses: wangyoucao577/go-release-action@v1.16
-        with:
-          github_token: ${{ secrets.HUI_TOKEN }}
-          goos: ${{ matrix.goos }}
-          goarch: ${{ matrix.goarch }}
-          project_path: "./main.go"
-          binary_name: "toolview"
-          ldflags: "-s -w"
-          extra_files: LICENSE README.md
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+        GOARCH: "386"
+        GOOS: linux
+        EXTRA_FILES: "LICENSE"
+  release-linux-amd64:
+    name: release linux/amd64
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+        GOARCH: amd64
+        GOOS: linux
+        EXTRA_FILES: "LICENSE"
+  release-linux-arm:
+    name: release linux/386
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+        GOARCH: "arm"
+        GOOS: linux
+        EXTRA_FILES: "LICENSE"
+  release-linux-arm64:
+    name: release linux/amd64
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+        GOARCH: arm64
+        GOOS: linux
+        EXTRA_FILES: "LICENSE"
+  release-darwin-amd64:
+    name: release darwin/amd64
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+        GOARCH: amd64
+        GOOS: darwin
+        EXTRA_FILES: "LICENSE"
+  release-windows-386:
+    name: release windows/386
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+        GOARCH: "386"
+        GOOS: windows
+        EXTRA_FILES: "LICENSE"
+  release-windows-amd64:
+    name: release windows/amd64
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: compile and release
+      uses: ngs/go-release.action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+        GOARCH: amd64
+        GOOS: windows
+        EXTRA_FILES: "LICENSE"

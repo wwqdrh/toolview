@@ -29,7 +29,10 @@ type confUpdateReq struct {
 
 func ConfUpdate(ctx *gin.Context) {
 	var req confUpdateReq
-	ctx.BindJSON(&req)
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
 
 	if err := currConf.Update(&etcdConf{
 		Endpoints: func() []string {
@@ -56,7 +59,10 @@ type keyListReq struct {
 
 func KeyList(ctx *gin.Context) {
 	var req keyListReq
-	ctx.BindQuery(&req)
+	if err := ctx.BindQuery(&req); err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
 	if _, err := currConf.VerifyDriver(); err != nil {
 		ctx.String(http.StatusOK, "etcd-conf未配置成功")
 		return

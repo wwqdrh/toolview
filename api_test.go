@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -37,8 +38,9 @@ func TestConf(t *testing.T) {
 	w = httptest.NewRecorder()
 	r, _ = http.NewRequest("GET", "/api/etcd/conf/verify", nil)
 	Engine.ServeHTTP(w, r)
-	status := w.Body.String()
-	if status == "ok" {
+	fmt.Println(w.Body.String())
+
+	if os.Getenv("LOCAL") != "" {
 		// 如果环境中有etcd且连接成功 那么做后面的测试
 		w = httptest.NewRecorder()
 		r, _ = http.NewRequest("GET", "/api/etcd/key/list?prefix=%2F", nil)

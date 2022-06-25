@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/wwqdrh/httputil"
 	"github.com/wwqdrh/logger"
 
 	"github.com/wwqdrh/toolview/etcd"
@@ -25,6 +26,11 @@ var port = flag.Int("port", 8080, "端口")
 //go:embed web/dist
 var dist embed.FS
 
+type Handler interface {
+	httputil.Base
+	Run(ctx *gin.Context)
+}
+
 var (
 	Engine *gin.Engine
 
@@ -34,21 +40,21 @@ var (
 	API = []struct {
 		method  string
 		url     string
-		handler []gin.HandlerFunc
+		handler Handler
 	}{
-		{"GET", "/api/etcd/conf/verify", []gin.HandlerFunc{etcd.ConfVerify}},
-		{"GET", "/api/etcd/conf/status", []gin.HandlerFunc{etcd.ConfStatus}},
-		{"POST", "/api/etcd/conf/update", []gin.HandlerFunc{etcd.ConfUpdate}},
-		{"GET", "/api/etcd/key/list", []gin.HandlerFunc{etcd.KeyList}},
-		{"POST", "/api/etcd/key/put", []gin.HandlerFunc{etcd.KeyPut}},
-		{"POST", "/api/etcd/key/delete", []gin.HandlerFunc{etcd.KeyDelete}},
+		{"GET", "/api/etcd/conf/verify", etcd.Confverify{Base: httputil.DefaultHandler}},
+		{"GET", "/api/etcd/conf/status", etcd.Confstatus{Base: httputil.DefaultHandler}},
+		{"POST", "/api/etcd/conf/update", etcd.Confupdate{Base: httputil.DefaultHandler}},
+		{"GET", "/api/etcd/key/list", etcd.Keylist{Base: httputil.DefaultHandler}},
+		{"POST", "/api/etcd/key/put", etcd.Keyput{Base: httputil.DefaultHandler}},
+		{"POST", "/api/etcd/key/delete", etcd.Keydelete{Base: httputil.DefaultHandler}},
 	}
 )
 
 func init() {
 	Engine = gin.Default()
 	for _, item := range API {
-		Engine.Handle(item.method, item.url, item.handler...)
+		Engine.Handle(item.method, item.url, item.handler.Run)
 	}
 
 	// 前端文件

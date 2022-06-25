@@ -5,47 +5,72 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/wwqdrh/httputil"
 	"github.com/wwqdrh/logger"
 )
 
-func ConfStatus(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, currConf)
+type Confstatus struct {
+	httputil.Base
+	Request  struct{}
+	Response struct{}
 }
 
-func ConfVerify(ctx *gin.Context) {
+func (c Confstatus) Run(ctx *gin.Context) {
+	if err := c.DoReq(ctx, 0, &c.Request); err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+	}
+
+	c.DoRes(ctx, http.StatusOK, gin.H{
+		"data": currConf,
+	})
+}
+
+type Confverify struct {
+	httputil.Base
+	Request  struct{}
+	Response struct{}
+}
+
+func (c Confverify) Run(ctx *gin.Context) {
+	if err := c.DoReq(ctx, 0, &c.Request); err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+	}
+
 	if _, err := currConf.VerifyDriver(); err != nil {
 		logger.DefaultLogger.Error(err.Error())
-		ctx.String(http.StatusOK, "fail")
+		c.DoRes(ctx, httputil.ServerOK, gin.H{"description": "fail"})
 	} else {
-		ctx.String(http.StatusOK, "ok")
+		c.DoRes(ctx, httputil.ServerOK, gin.H{"description": "ok"})
 	}
 }
 
-type confUpdateReq struct {
-	Endpoints []string `json:"endpoints"`
-	UserName  string   `json:"username"`
-	Password  string   `json:"password"`
+type Confupdate struct {
+	httputil.Base
+	Request struct {
+		Endpoints []string `json:"endpoints"`
+		UserName  string   `json:"username"`
+		Password  string   `json:"password"`
+	}
+	Response struct{}
 }
 
-func ConfUpdate(ctx *gin.Context) {
-	var req confUpdateReq
-	if err := ctx.BindJSON(&req); err != nil {
+func (c Confupdate) Run(ctx *gin.Context) {
+	if err := c.DoReq(ctx, httputil.JSON, &c.Request); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
-		return
 	}
 
 	if err := currConf.Update(&etcdConf{
 		Endpoints: func() []string {
-			endpoints := req.Endpoints[:0]
-			for _, item := range req.Endpoints {
+			endpoints := c.Request.Endpoints[:0]
+			for _, item := range c.Request.Endpoints {
 				if strings.TrimSpace(item) != "" {
 					endpoints = append(endpoints, item)
 				}
 			}
 			return endpoints
 		}(),
-		UserName: strings.TrimSpace(req.UserName),
-		Password: strings.TrimSpace(req.Password),
+		UserName: strings.TrimSpace(c.Request.UserName),
+		Password: strings.TrimSpace(c.Request.Password),
 	}); err == nil {
 		ctx.String(http.StatusOK, "更新成功")
 	} else {
@@ -53,22 +78,25 @@ func ConfUpdate(ctx *gin.Context) {
 	}
 }
 
-type keyListReq struct {
-	Prefix string `form:"prefix"`
+type Keylist struct {
+	httputil.Base
+	Request struct {
+		Prefix string `form:"prefix"`
+	}
+	Response struct{}
 }
 
-func KeyList(ctx *gin.Context) {
-	var req keyListReq
-	if err := ctx.BindQuery(&req); err != nil {
+func (c Keylist) Run(ctx *gin.Context) {
+	if err := c.DoReq(ctx, 0, &c.Request); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
-		return
 	}
+
 	if _, err := currConf.VerifyDriver(); err != nil {
 		ctx.String(http.StatusOK, "etcd-conf未配置成功")
 		return
 	}
 
-	res, err := currDriver.List(req.Prefix)
+	res, err := currDriver.List(c.Request.Prefix)
 	if err != nil {
 		logger.DefaultLogger.Error(err.Error())
 		ctx.String(http.StatusInternalServerError, err.Error())
@@ -77,32 +105,39 @@ func KeyList(ctx *gin.Context) {
 	}
 }
 
-type keyPutReq struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+type Keyput struct {
+	httputil.Base
+	Request struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}
+	Response struct{}
 }
 
-func KeyPut(ctx *gin.Context) {
-	var req keyPutReq
-	if err := ctx.BindJSON(&req); err != nil {
+func (c Keyput) Run(ctx *gin.Context) {
+	if err := c.DoReq(ctx, 0, &c.Request); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
-		return
 	}
 	if _, err := currConf.VerifyDriver(); err != nil {
 		ctx.String(http.StatusOK, "etcd-conf未配置成功")
 		return
 	}
 
-	err := currDriver.Put(req.Key, req.Value)
+	err := currDriver.Put(c.Request.Key, c.Request.Value)
 	if err != nil {
 		logger.DefaultLogger.Error(err.Error())
 		ctx.String(http.StatusInternalServerError, err.Error())
 	} else {
 		ctx.String(http.StatusOK, "ok")
 	}
-
 }
 
-func KeyDelete(ctx *gin.Context) {
+type Keydelete struct {
+	httputil.Base
+	Request  struct{}
+	Response struct{}
+}
+
+func (c Keydelete) Run(ctx *gin.Context) {
 
 }

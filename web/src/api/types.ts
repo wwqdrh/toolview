@@ -3,4 +3,17 @@ interface EtcdList {
   value: string
 }
 
-export type { EtcdList }
+interface EtcdConfig {
+  endpoints: string
+  username: string
+  password: string
+}
+
+interface APIResponse {
+  code: number
+  msg: string
+  description: string
+  data: object
+}
+
+export type { EtcdList, EtcdConfig, APIResponse }

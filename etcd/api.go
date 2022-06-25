@@ -11,8 +11,14 @@ import (
 
 type Confstatus struct {
 	httputil.Base
-	Request  struct{}
-	Response struct{}
+
+	Request struct{}
+
+	Response struct {
+		Endpoints string `json:"endpoints"`
+		Username  string `json:"username"`
+		Password  string `json:"password"`
+	}
 }
 
 func (c Confstatus) Run(ctx *gin.Context) {
@@ -20,8 +26,11 @@ func (c Confstatus) Run(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, err.Error())
 	}
 
+	c.Response.Endpoints = strings.Join(currConf.Endpoints, ";")
+	c.Response.Username = currConf.UserName
+	c.Response.Password = currConf.Password
 	c.DoRes(ctx, http.StatusOK, gin.H{
-		"data": currConf,
+		"data": &c.Response,
 	})
 }
 
@@ -38,7 +47,7 @@ func (c Confverify) Run(ctx *gin.Context) {
 
 	if _, err := currConf.VerifyDriver(); err != nil {
 		logger.DefaultLogger.Error(err.Error())
-		c.DoRes(ctx, httputil.ServerOK, gin.H{"description": "fail"})
+		c.DoRes(ctx, httputil.ParamInvalid, gin.H{"description": "fail"})
 	} else {
 		c.DoRes(ctx, httputil.ServerOK, gin.H{"description": "ok"})
 	}
@@ -47,9 +56,9 @@ func (c Confverify) Run(ctx *gin.Context) {
 type Confupdate struct {
 	httputil.Base
 	Request struct {
-		Endpoints []string `json:"endpoints"`
-		UserName  string   `json:"username"`
-		Password  string   `json:"password"`
+		Endpoints string `json:"endpoints"` // a;b;c
+		UserName  string `json:"username"`
+		Password  string `json:"password"`
 	}
 	Response struct{}
 }
@@ -61,13 +70,7 @@ func (c Confupdate) Run(ctx *gin.Context) {
 
 	if err := currConf.Update(&etcdConf{
 		Endpoints: func() []string {
-			endpoints := c.Request.Endpoints[:0]
-			for _, item := range c.Request.Endpoints {
-				if strings.TrimSpace(item) != "" {
-					endpoints = append(endpoints, item)
-				}
-			}
-			return endpoints
+			return strings.Split(strings.TrimSpace(c.Request.Endpoints), ";")
 		}(),
 		UserName: strings.TrimSpace(c.Request.UserName),
 		Password: strings.TrimSpace(c.Request.Password),
@@ -115,7 +118,7 @@ type Keyput struct {
 }
 
 func (c Keyput) Run(ctx *gin.Context) {
-	if err := c.DoReq(ctx, 0, &c.Request); err != nil {
+	if err := c.DoReq(ctx, httputil.JSON, &c.Request); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 	}
 	if _, err := currConf.VerifyDriver(); err != nil {

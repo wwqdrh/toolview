@@ -1,13 +1,19 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 
-import { GetEtcdList, UpdateEtcdKey } from '~/api/etcd'
-import type { EtcdList } from '~/api/types'
+import { GetEtcdConf, GetEtcdConfStatus, GetEtcdList, UpdateEtcdConf, UpdateEtcdKey } from '~/api/etcd'
+import type { APIResponse, EtcdConfig, EtcdList } from '~/api/types'
 
 export const useEtcdStore = defineStore('etcd', () => {
   const version = ref(1)
+  const _ = ref<any>() // 只是为了避免lint报错
+
+  async function getStatus(): Promise<APIResponse> {
+    _.value = version.value
+    return await (await GetEtcdConfStatus()).data
+  }
 
   async function getKeyList(): Promise<EtcdList[]> {
-    const _ = version.value // 触发更新
+    _.value = version.value // 引用version字段 能够触发更新
     const res = await GetEtcdList()
     return res.data
   }
@@ -17,9 +23,21 @@ export const useEtcdStore = defineStore('etcd', () => {
     version.value++
   }
 
+  async function getConf(): Promise<EtcdConfig> {
+    const res = await GetEtcdConf()
+    return (res.data as APIResponse).data as EtcdConfig
+  }
+
+  async function updateConf(conf: EtcdConfig) {
+    return await UpdateEtcdConf(conf)
+  }
+
   return {
     getKeyList,
+    getStatus,
     updateKey,
+    getConf,
+    updateConf,
   }
 })
 

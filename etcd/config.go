@@ -8,8 +8,8 @@ import (
 // 饿汉单例 全局只维护这一个配置
 var currConf = &etcdConf{
 	Endpoints: []string{"127.0.0.1:2379"},
-	UserName:  "root",
-	Password:  "123456",
+	UserName:  "",
+	Password:  "",
 }
 
 var currDriver *EtcdDriver
@@ -30,15 +30,11 @@ func (c *etcdConf) Update(conf *etcdConf) error {
 	if conf.Password != "" {
 		c.Password = conf.Password
 	}
-
-	return nil
+	_, err := c.VerifyDriver()
+	return err
 }
 
 func (c *etcdConf) VerifyDriver() (*EtcdDriver, error) {
-	if currDriver != nil {
-		return currDriver, nil
-	}
-
 	driver, err := NewEtcdDriver(&EtcdOptions{
 		Endpoints:   currConf.Endpoints,
 		DialTimeout: 3 * time.Second,

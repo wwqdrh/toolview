@@ -42,14 +42,20 @@
 git clone https://github.com/wwqdrh/toolview.git
 
 // GOOS指定目标操作系统 GOARCH指定cpu指令集
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags=web .
 ```
 <br>
 
 *直接安装*
 
 ```bash
-go install github.com/wwqdrh/toolview/@latest
+go install -tags=web github.com/wwqdrh/toolview/@latest
+```
+
+如果只需要api，不需要界面可以使用(release中同样也可以选择版本)
+
+```bash
+go install -tags=api github.com/wwqdrh/toolview/@latest
 ```
 
 *release*

@@ -69,12 +69,17 @@ jobs:
           GOOS=${GOOSARCH%/*}
           GOARCH=${GOOSARCH#*/}
           BINARY_NAME=${{github.repository}}-$GOOS-$GOARCH
+          BINARY_API_NAME=${{github.repository}}-api-$GOOS-$GOARCH
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
+          echo "BINARY_API_NAME=$BINARY_API_NAME" >> $GITHUB_ENV
           echo "GOOS=$GOOS" >> $GITHUB_ENV
           echo "GOARCH=$GOARCH" >> $GITHUB_ENV
       - name: Build
         run: |
-          go build -ldflags '-w -s' -o "$BINARY_NAME" -v
+          go build -tags web -ldflags '-w -s' -o "$BINARY_NAME" -v
+      - name: Build API
+        run: |
+          go build -tags api -ldflags '-w -s' -o "$BINARY_API_NAME" -v
       - name: Release Notes
         run:
           git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
@@ -84,5 +89,13 @@ jobs:
           body_path: ".github/RELEASE-TEMPLATE.md"
           draft: true
           files: ${{env.BINARY_NAME}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}
+      - name: Release with Notes
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: ".github/RELEASE-TEMPLATE.md"
+          draft: true
+          files: ${{env.BINARY_API_NAME}}
         env:
           GITHUB_TOKEN: ${{ secrets.HUI_TOKEN }}

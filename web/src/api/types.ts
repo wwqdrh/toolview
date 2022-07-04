@@ -9,6 +9,11 @@ interface EtcdConfig {
   password: string
 }
 
+interface RedisConfig {
+  endpoint: string
+  password: string
+}
+
 interface APIResponse {
   code: number
   msg: string
@@ -16,4 +21,4 @@ interface APIResponse {
   data: object
 }
 
-export type { EtcdList, EtcdConfig, APIResponse }
+export type { EtcdList, EtcdConfig, APIResponse, RedisConfig }

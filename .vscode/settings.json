@@ -1,3 +1,4 @@
 {
-    "go.testEnvFile": "${workspaceFolder}/dev.env"
+    "go.testEnvFile": "${workspaceFolder}/dev.env",
+    "go.buildFlags": ["-tags=api"]
 }

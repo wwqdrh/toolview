@@ -7,6 +7,7 @@ import (
 	"github.com/wwqdrh/httputil"
 	"github.com/wwqdrh/httputil/middleware"
 	"github.com/wwqdrh/toolview/etcd"
+	"github.com/wwqdrh/toolview/redis"
 )
 
 var corsMiddleware = middleware.GinAllowAll()
@@ -27,6 +28,11 @@ var API = []struct {
 	{"GET", "/api/etcd/key/list", etcd.Keylist{Base: httputil.DefaultHandler}},
 	{"POST", "/api/etcd/key/put", etcd.Keyput{Base: httputil.DefaultHandler}},
 	{"POST", "/api/etcd/key/delete", etcd.Keydelete{Base: httputil.DefaultHandler}},
+	// redis
+	{"GET", "/api/redis/conf/verify", redis.Confverify{Base: httputil.DefaultHandler}},
+	{"GET", "/api/redis/conf/status", redis.ConfStatus{Base: httputil.DefaultHandler}},
+	{"POST", "/api/redis/conf/update", redis.Confupdate{Base: httputil.DefaultHandler}},
+	{"GET", "/api/redis/key/get", redis.KeyGet{Base: httputil.DefaultHandler}},
 }
 
 func init() {

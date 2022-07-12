@@ -49,6 +49,10 @@ func (d *redisDriver) Ping() error {
 	}
 }
 
+func (d *redisDriver) Close() error {
+	return d.client.Close()
+}
+
 func (d *redisDriver) Get(key string, redisTyp dataTyp) (interface{}, error) {
 	switch redisTyp {
 	case redisString:
